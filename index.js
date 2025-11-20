@@ -1,46 +1,49 @@
-// index.js — Consistent CommonJS version
+// index.js — Production Ready API Server (CommonJS)
 
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
-const { Pool } = require("pg");
+const pool = require("./db");
 
+// Load environment variables
 dotenv.config();
 
+// Initialize Express
 const app = express();
 
-// Middleware
+// ===========================
+//        FIXED CORS
+// ===========================
 app.use(cors({
-    origin: "*",
-    methods: ["GET", "POST"],
+    origin: ["https://rewrds.vercel.app", "http://localhost:3000"],
+    methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type"]
 }));
 
+// Explicit preflight handler
+app.options("*", cors());
+
+// Parse JSON request bodies
 app.use(express.json());
 
-// Database
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-});
-
-// Make pool available globally
+// Inject the database pool into the app (accessible in all routes)
 app.set("db", pool);
 
-// ROUTES
-const scoreRoutes = require("./routes/score");
-const cardRoutes = require("./routes/card");
+// ===========================
+//          ROUTES
+// ===========================
+app.use("/score", require("./routes/score"));
+app.use("/cards", require("./routes/card"));
 
-app.use("/score", scoreRoutes);
-app.use("/cards", cardRoutes);
-
-// Health Check
+// Simple health check route
 app.get("/", (req, res) => {
     res.json({ status: "REWRDS API is live", online: true });
 });
 
-// Start Server
+// ===========================
+//      START SERVER
+// ===========================
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () =>
-    console.log(`🚀 REWRDS API running on port ${PORT}`)
-);
+app.listen(PORT, () => {
+    console.log(`🚀 REWRDS API running on port ${PORT}`);
+});

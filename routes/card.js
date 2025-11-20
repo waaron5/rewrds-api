@@ -1,14 +1,19 @@
+// routes/card.js — Fetch all cards
+
 const express = require("express");
 const router = express.Router();
-const pool = require("../db");
 
+// GET /cards
 router.get("/", async (req, res) => {
     try {
-        const { rows } = await pool.query("SELECT * FROM cards");
-        res.json(rows);
+        const pool = req.app.get("db");
+
+        const { rows } = await pool.query("SELECT * FROM cards ORDER BY id ASC");
+
+        return res.json(rows);
     } catch (err) {
-        console.error("Error fetching cards:", err);
-        res.status(500).json({ error: "Failed to fetch cards." });
+        console.error("CARD FETCH ERROR:", err);
+        return res.status(500).json({ error: "Could not load cards." });
     }
 });
 
